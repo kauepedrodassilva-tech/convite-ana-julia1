@@ -1,0 +1,77 @@
+{
+  "settings": {
+    "eventName": "Birthday 19 — Ana Júlia",
+    "eventDate": "2026-12-06T15:00:00.000Z",
+    "address": "Endereço a confirmar",
+    "mapsUrl": "",
+    "musicUrl": "",
+    "heroImage": "",
+    "adminEmail": "admin@convite.local",
+    "rsvpEnabled": true,
+    "reservationsEnabled": true
+  },
+  "gifts": [
+    {
+      "id": "g4",
+      "name": "Bijuteria ou acessório",
+      "quantity": 0,
+      "active": true
+    },
+    {
+      "id": "g8",
+      "name": "Um mimo surpresa",
+      "quantity": 0,
+      "active": true
+    },
+    {
+      "id": "45ecacea-a30c-401d-91d5-0dccbfc9f856",
+      "name": "Produtos para Pele",
+      "quantity": 0,
+      "active": true
+    },
+    {
+      "id": "4996b752-a0b5-4e55-92af-9b6e7ee303dd",
+      "name": "Bolsa",
+      "quantity": 0,
+      "active": true
+    },
+    {
+      "id": "2480f016-5bae-42ff-8599-d7fa5e4be78c",
+      "name": "Maquiagem",
+      "quantity": 0,
+      "active": true
+    },
+    {
+      "id": "9b757aba-b061-49c6-90b1-27a7ae0aa0bb",
+      "name": "Perfume",
+      "quantity": 0,
+      "active": true
+    },
+    {
+      "id": "bf66bd9c-1f07-4d47-b037-25ba9713f189",
+      "name": "Sapato",
+      "quantity": 0,
+      "active": true
+    },
+    {
+      "id": "2ec74609-16e9-43f6-8f5a-945d8a37a77e",
+      "name": "Roupa",
+      "quantity": 0,
+      "active": true
+    },
+    {
+      "id": "2371f113-d3b1-465e-ab33-ce05d4ba085c",
+      "name": "Pix",
+      "quantity": 0,
+      "active": true
+    },
+    {
+      "id": "4faffe56-7852-4758-a5b5-a5905495ef89",
+      "name": "Produtos para Cabelo",
+      "quantity": 0,
+      "active": true
+    }
+  ],
+  "rsvps": [],
+  "reservations": []
+}
