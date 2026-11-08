@@ -18,7 +18,7 @@ const uid = () => crypto.randomUUID();
  * Banco de dados (arquivo JSON, como no projeto original)
  * ------------------------------------------------------------------ */
 const initial = {
-  schema: 2,
+  schema: 4,
   settings: {
     eventName: 'Birthday 19 — Ana Júlia',
     eventDate: '2026-12-06T12:00:00-03:00',
@@ -26,7 +26,7 @@ const initial = {
     mapsUrl: '', musicUrl: '', heroImage: '',
     adminEmail: env('ADMIN_EMAIL', 'admin@convite.local'),
     rsvpEnabled: true,
-    reservationsEnabled: true
+    honoree: {name: 'Ana Júlia', clothingSize: '', shoeSize: ''}
   },
   gifts: [
     ['Perfume', 'Uma fragrância delicada para perfumar o novo ciclo.'],
@@ -37,43 +37,70 @@ const initial = {
     ['Vale-presente', 'Para ela escolher exatamente o que quiser.'],
     ['Chocolate', 'Porque doce nunca é demais em dia de festa.'],
     ['Um mimo surpresa', 'Surpreenda a Ana com algo feito com carinho.']
-  ].map(([name, description], i) => ({id: 'g' + (i + 1), name, description, image: '', active: true, chosenBy: null, chosenAt: null, createdAt: new Date().toISOString()})),
+  ].map(([name, description], i) => ({id: 'g' + (i + 1), name, description, image: '', active: true, createdAt: new Date().toISOString()})),
   rsvps: []
 };
 
-/** Migra bancos criados pela versão antiga (roleta + reservas) para o novo modelo. */
+/**
+ * Migra bancos de versões anteriores, em etapas e sem apagar confirmações nem presentes:
+ *  v1 (roleta + reservas)  ->  v2 (escolha única de presente, "people" = total de pessoas)
+ *  v2                      ->  v3 (sem links de compra; todo registro com quantidade de pessoas válida)
+ *  v3                      ->  v4 (lista de presentes apenas informativa: sem escolha/reserva; dados da aniversariante)
+ */
 function migrate(d) {
-  if (d.schema === 2) return d;
-  const reservations = (d.reservations || []).filter(r => r.status === 'active');
-  for (const g of d.gifts || []) {
-    g.description ??= '';
-    g.image ??= '';
-    g.chosenBy = null; g.chosenAt = null;
-    g.createdAt ??= new Date().toISOString();
-    const taken = reservations.filter(r => r.giftId === g.id);
-    if (taken.length) {
-      g.chosenBy = taken[0].rsvpId; g.chosenAt = taken[0].createdAt;
-      if (taken.length > 1) console.warn(`Aviso: o presente "${g.name}" tinha ${taken.length} reservas; apenas a primeira foi mantida.`);
+  if ((d.schema || 1) < 2) {
+    const reservations = (d.reservations || []).filter(r => r.status === 'active');
+    for (const g of d.gifts || []) {
+      g.description ??= '';
+      g.image ??= '';
+      g.chosenBy = null; g.chosenAt = null;
+      g.createdAt ??= new Date().toISOString();
+      const taken = reservations.filter(r => r.giftId === g.id);
+      if (taken.length) {
+        g.chosenBy = taken[0].rsvpId; g.chosenAt = taken[0].createdAt;
+        if (taken.length > 1) console.warn(`Aviso: o presente "${g.name}" tinha ${taken.length} reservas; apenas a primeira foi mantida.`);
+      }
+      delete g.quantity;
     }
-    delete g.quantity;
+    for (const r of d.rsvps || []) {
+      r.people = r.attendance === 'yes' ? 1 + (Number(r.companions) || 0) : 0;
+      delete r.companions; // agora a quantidade total fica em "people"
+    }
+    delete d.reservations;
+    d.schema = 2;
   }
-  for (const r of d.rsvps || []) {
-    r.people = r.attendance === 'yes' ? 1 + (Number(r.companions) || 0) : 0;
-    delete r.companions; // agora a quantidade total fica em "people"
+  if (d.schema < 3) {
+    for (const g of d.gifts || []) delete g.buyUrl; // links de compra removidos
+    for (const r of d.rsvps || []) {
+      // registro sem quantidade definida: conta como 1 pessoa (se vai) — nunca duplica nem apaga
+      const n = Number(r.people);
+      if (r.attendance === 'yes') r.people = Number.isInteger(n) && n >= 1 ? n : 1;
+      else r.people = 0;
+      delete r.companions;
+    }
+    d.schema = 3;
   }
-  delete d.reservations;
-  d.schema = 2;
+  if (d.schema < 4) {
+    // a lista passou a ser só informativa: some o vínculo presente <-> confirmação. Confirmações e tokens ficam intactos.
+    for (const g of d.gifts || []) { delete g.chosenBy; delete g.chosenAt; delete g.buyUrl; }
+    delete d.settings.reservationsEnabled;
+    d.settings.honoree ??= {name: 'Ana Júlia', clothingSize: '', shoeSize: ''};
+    d.schema = 4;
+  }
   return d;
 }
 
 let db;
 if (!fs.existsSync(dbFile)) fs.writeFileSync(dbFile, JSON.stringify(initial, null, 2));
 db = JSON.parse(fs.readFileSync(dbFile, 'utf8'));
-if (db.schema !== 2) {
-  fs.copyFileSync(dbFile, dbFile + '.backup-pre-v2');
+if (db.schema !== 4) {
+  // backup antes de qualquer alteração estrutural
+  const bk = `${dbFile}.backup-pre-v4-${new Date().toISOString().replace(/[:.]/g, '-')}`;
+  fs.copyFileSync(dbFile, bk);
+  console.log('Backup criado em ' + bk);
   db = migrate(db);
 }
-db.settings.reservationsEnabled ??= true;
+db.settings.honoree ??= {name: 'Ana Júlia', clothingSize: '', shoeSize: ''};
 
 function save() {
   // gravação atômica: arquivo temporário + rename
@@ -146,10 +173,26 @@ function guestFromReq(req) {
   if (t.length < 20) return null;
   return db.rsvps.find(r => r.token && r.token.length === t.length && safeEqual(r.token, t)) || null;
 }
-const giftOf = r => r && db.gifts.find(g => g.chosenBy === r.id) || null;
-const guestSummary = r => r && ({name: r.name, attendance: r.attendance, people: r.people, gift: giftOf(r) ? {id: giftOf(r).id, name: giftOf(r).name} : null});
+const guestSummary = r => r && ({name: r.name, attendance: r.attendance, people: r.people});
 const publicSettings = () => { const {adminEmail: _omit, ...rest} = db.settings; return rest; };
-const publicGift = (g, me) => ({id: g.id, name: g.name, description: g.description, image: g.image, buyUrl: g.buyUrl || '', available: !g.chosenBy, mine: !!me && g.chosenBy === me.id});
+const publicGift = g => ({id: g.id, name: g.name, description: g.description, image: g.image});
+const publicHonoree = () => { const h = db.settings.honoree || {}; return {name: h.name || '', clothingSize: h.clothingSize || '', shoeSize: h.shoeSize || ''}; };
+
+/** Valida os dados de uma confirmação (usada no cadastro público e na edição pelo painel). */
+function readRsvpFields(b, exceptId = null) {
+  const name = String(b.name || '').trim().replace(/\s+/g, ' ');
+  const attendance = b.attendance === 'yes' ? 'yes' : b.attendance === 'no' ? 'no' : null;
+  const message = String(b.message || '').trim();
+  if (name.length < 2 || name.length > 100) throw new HttpError(400, 'Informe seu nome completo.');
+  if (!attendance) throw new HttpError(400, 'Informe se você irá comparecer.');
+  let people = 0;
+  if (attendance === 'yes') {
+    people = Number(b.people);
+    if (!Number.isInteger(people) || people < 1 || people > 10) throw new HttpError(400, 'Informe quantas pessoas irão (de 1 a 10, incluindo você).');
+  }
+  if (message.length > 500) throw new HttpError(400, 'A mensagem é muito longa.');
+  return {name, attendance, people, message};
+}
 
 /* ------------------------------------------------------------------ *
  * Imagens dos presentes
@@ -170,25 +213,13 @@ function saveImageData(dataUrl) {
 }
 const removeLocalImage = url => { if (IMG_LOCAL.test(url || '')) fs.rm(path.join(here, 'data', url), {force: true}, () => {}); };
 
-/** Valida o link de compra: aceita só http/https; se faltar o esquema (ex.: "www.loja.com"), acrescenta https://. */
-function normalizeBuyUrl(raw) {
-  let v = String(raw || '').trim();
-  if (!v) return '';
-  if (v.length > 500 || /\s/.test(v)) throw new HttpError(400, 'Link de compra inválido. Confira o endereço.');
-  if (!/^[a-z][a-z0-9+.-]*:/i.test(v)) v = 'https://' + v;
-  let u;
-  try { u = new URL(v); } catch { throw new HttpError(400, 'Link de compra inválido. Confira o endereço.'); }
-  if (!['http:', 'https:'].includes(u.protocol) || !u.hostname.includes('.')) throw new HttpError(400, 'Link de compra inválido. Use um endereço http:// ou https:// completo.');
-  return u.href;
-}
-
 function readGiftFields(b) {
   const name = String(b.name || '').trim(), description = String(b.description || '').trim();
   if (!name || name.length > 120) throw new HttpError(400, 'Informe o nome do presente (até 120 caracteres).');
   if (description.length > 300) throw new HttpError(400, 'A descrição pode ter até 300 caracteres.');
   let image = String(b.image || '').trim();
   if (image && !IMG_LOCAL.test(image) && !/^https?:\/\/\S{1,500}$/i.test(image)) throw new HttpError(400, 'Link de imagem inválido.');
-  return {name, description, image, buyUrl: normalizeBuyUrl(b.buyUrl)};
+  return {name, description, image};
 }
 
 /* ------------------------------------------------------------------ *
@@ -200,28 +231,18 @@ async function api(req, res, p, ip) {
   /* ---------- públicas ---------- */
   if (method === 'GET' && p === '/api/public') {
     const me = guestFromReq(req);
-    return send(res, 200, {settings: publicSettings(), gifts: db.gifts.filter(g => g.active).map(g => publicGift(g, me)), me: guestSummary(me)});
+    return send(res, 200, {settings: publicSettings(), gifts: db.gifts.filter(g => g.active).map(publicGift), honoree: publicHonoree(), me: guestSummary(me)});
   }
 
   if (method === 'POST' && p === '/api/rsvp') {
     const b = await readBody(req);
     const out = tx(() => {
       if (!db.settings.rsvpEnabled) throw new HttpError(403, 'As confirmações estão encerradas.');
-      const name = String(b.name || '').trim().replace(/\s+/g, ' ');
-      const attendance = b.attendance === 'yes' ? 'yes' : b.attendance === 'no' ? 'no' : null;
-      const message = String(b.message || '').trim();
-      if (name.length < 2 || name.length > 100) throw new HttpError(400, 'Informe seu nome completo.');
-      if (!attendance) throw new HttpError(400, 'Informe se você irá comparecer.');
-      let people = 0;
-      if (attendance === 'yes') {
-        people = Number(b.people);
-        if (!Number.isInteger(people) || people < 1 || people > 10) throw new HttpError(400, 'Informe quantas pessoas irão (de 1 a 10, incluindo você).');
-      }
-      if (message.length > 500) throw new HttpError(400, 'A mensagem é muito longa.');
+      const {name, attendance, people, message} = readRsvpFields(b);
 
       const existing = db.rsvps.find(r => normName(r.name) === normName(name));
       if (existing && existing.token) {
-        throw new HttpError(409, 'Este nome já confirmou presença. Se você já confirmou, use o mesmo aparelho/navegador para escolher seu presente; se precisar de ajuda, fale com a Ana.');
+        throw new HttpError(409, 'Este nome já confirmou presença. Para evitar duplicidade, apenas uma pessoa por família confirma. Se precisar corrigir algo, fale com a Ana.');
       }
       const token = crypto.randomBytes(24).toString('hex');
       let r = existing; // resposta antiga (sem token) é "adotada" uma única vez
@@ -230,24 +251,6 @@ async function api(req, res, p, ip) {
       return {token, guest: guestSummary(r)};
     });
     return send(res, 201, {message: out.guest.attendance === 'yes' ? 'Presença confirmada! Obrigada ♥' : 'Resposta registrada. Sentiremos sua falta ♥', ...out});
-  }
-
-  if (method === 'POST' && p === '/api/gift/choose') {
-    const b = await readBody(req);
-    const out = tx(() => {
-      if (!db.settings.reservationsEnabled) throw new HttpError(403, 'A escolha de presentes está encerrada.');
-      const me = guestFromReq(req);
-      if (!me) throw new HttpError(401, 'Confirme sua presença primeiro para escolher um presente.');
-      if (me.attendance !== 'yes') throw new HttpError(403, 'Apenas convidados com presença confirmada podem escolher presente.');
-      const mine = giftOf(me);
-      if (mine) throw new HttpError(409, `Você já escolheu um presente (${mine.name}). Cada convidado pode escolher apenas um.`);
-      const g = db.gifts.find(x => x.id === b.giftId && x.active);
-      if (!g) throw new HttpError(404, 'Este presente não está mais na lista.');
-      if (g.chosenBy) throw new HttpError(409, 'Ops! Alguém acabou de escolher este presente. Escolha outro da lista.');
-      g.chosenBy = me.id; g.chosenAt = new Date().toISOString();
-      return {guest: guestSummary(me)};
-    });
-    return send(res, 201, {message: 'Presente escolhido! Obrigada pelo carinho ♥', ...out});
   }
 
   if (method === 'POST' && p === '/api/login') {
@@ -264,12 +267,7 @@ async function api(req, res, p, ip) {
   if (!isAdmin(req)) throw new HttpError(401, 'Sessão expirada. Entre novamente.');
 
   if (method === 'GET' && p === '/api/admin') {
-    const byId = id => db.rsvps.find(r => r.id === id);
-    return send(res, 200, {
-      settings: db.settings,
-      gifts: db.gifts.map(g => ({...g, chosenByName: g.chosenBy ? byId(g.chosenBy)?.name || '(convidado removido)' : '', chosenByPeople: g.chosenBy ? byId(g.chosenBy)?.people || 0 : 0})),
-      rsvps: db.rsvps.map(r => ({...r, giftId: giftOf(r)?.id || '', giftName: giftOf(r)?.name || ''}))
-    });
+    return send(res, 200, {settings: db.settings, gifts: db.gifts, rsvps: db.rsvps});
   }
 
   if (method === 'POST' && p === '/api/gift') {
@@ -277,16 +275,22 @@ async function api(req, res, p, ip) {
     tx(() => {
       const f = readGiftFields(b);
       if (b.imageData) f.image = saveImageData(b.imageData);
-      db.gifts.push({id: uid(), ...f, active: true, chosenBy: null, chosenAt: null, createdAt: new Date().toISOString()});
+      db.gifts.push({id: uid(), ...f, active: true, createdAt: new Date().toISOString()});
     });
     return send(res, 201, {ok: true});
   }
 
-  const gm = /^\/api\/gift\/([^/]+?)(\/release)?$/.exec(p);
+  const gm = /^\/api\/gift\/([^/]+?)(\/move)?$/.exec(p);
   if (gm) {
     const gid = gm[1];
     if (method === 'POST' && gm[2]) {
-      tx(() => { const g = db.gifts.find(x => x.id === gid); if (!g) throw new HttpError(404, 'Presente não encontrado.'); g.chosenBy = null; g.chosenAt = null; });
+      const b = await readBody(req);
+      tx(() => {
+        const i = db.gifts.findIndex(x => x.id === gid); if (i < 0) throw new HttpError(404, 'Presente não encontrado.');
+        const j = b.direction === 'up' ? i - 1 : b.direction === 'down' ? i + 1 : -1;
+        if (j < 0 || j >= db.gifts.length) return; // já está na ponta
+        [db.gifts[i], db.gifts[j]] = [db.gifts[j], db.gifts[i]];
+      });
       return send(res, 200, {ok: true});
     }
     if (method === 'PUT') {
@@ -308,7 +312,6 @@ async function api(req, res, p, ip) {
     if (method === 'DELETE') {
       tx(() => {
         const g = db.gifts.find(x => x.id === gid); if (!g) throw new HttpError(404, 'Presente não encontrado.');
-        if (g.chosenBy) throw new HttpError(409, 'Este presente já foi escolhido. Libere-o antes de excluir.');
         db.gifts = db.gifts.filter(x => x.id !== gid);
         removeLocalImage(g.image);
       });
@@ -321,17 +324,39 @@ async function api(req, res, p, ip) {
     tx(() => {
       if (!b.eventName || !b.eventDate || !b.adminEmail) throw new HttpError(400, 'Preencha nome, data e e-mail.');
       for (const k of ['eventName', 'eventDate', 'address', 'mapsUrl', 'musicUrl', 'heroImage', 'adminEmail']) if (k in b) db.settings[k] = String(b[k]);
-      for (const k of ['rsvpEnabled', 'reservationsEnabled']) if (k in b) db.settings[k] = !!b[k];
+      for (const k of ['rsvpEnabled']) if (k in b) db.settings[k] = !!b[k];
     });
     return send(res, 200, {ok: true});
   }
 
+  if (method === 'PUT' && p === '/api/honoree') {
+    const b = await readBody(req);
+    tx(() => {
+      const name = String(b.name || '').trim().replace(/\s+/g, ' '), clothingSize = String(b.clothingSize || '').trim(), shoeSize = String(b.shoeSize || '').trim();
+      if (name.length < 2 || name.length > 80) throw new HttpError(400, 'Informe o nome da aniversariante (2 a 80 caracteres).');
+      if (clothingSize.length > 20) throw new HttpError(400, 'O tamanho de roupa pode ter até 20 caracteres (ex.: M, 38, P/M).');
+      if (shoeSize.length > 10 || (shoeSize && !/^[0-9]{2}([.,/\-][0-9]{1,2})?$/.test(shoeSize))) throw new HttpError(400, 'Informe o número do calçado com números (ex.: 36 ou 36,5).');
+      db.settings.honoree = {name, clothingSize, shoeSize};
+    });
+    return send(res, 200, {ok: true, honoree: publicHonoree()});
+  }
+
   if (method === 'GET' && p === '/api/rsvps') return send(res, 200, {rsvps: db.rsvps.map(({token, ...r}) => r)});
+
+  if (method === 'PUT' && p.startsWith('/api/rsvp/')) {
+    const rid = p.split('/').pop(), b = await readBody(req);
+    tx(() => {
+      const r = db.rsvps.find(x => x.id === rid); if (!r) throw new HttpError(404, 'Confirmação não encontrada.');
+      const f = readRsvpFields(b);
+      if (db.rsvps.some(x => x.id !== rid && normName(x.name) === normName(f.name))) throw new HttpError(409, 'Já existe outra confirmação com este nome.');
+      Object.assign(r, f); // o token (identificação do convidado) não é alterado
+    });
+    return send(res, 200, {ok: true});
+  }
 
   if (method === 'DELETE' && p.startsWith('/api/rsvp/')) {
     const rid = p.split('/').pop();
     tx(() => {
-      for (const g of db.gifts) if (g.chosenBy === rid) { g.chosenBy = null; g.chosenAt = null; } // libera o presente do convidado removido
       db.rsvps = db.rsvps.filter(r => r.id !== rid);
     });
     return send(res, 200, {ok: true});
