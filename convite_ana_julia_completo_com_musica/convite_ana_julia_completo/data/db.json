@@ -1,170 +1,84 @@
 {
-  "schema": 2,
+  "schema": 4,
   "settings": {
     "eventName": "Birthday 19 — Ana Júlia",
-    "eventDate": "2026-12-06T15:00:00.000Z",
-    "address": "Rua João de Lacerda 418, Bangu",
-    "mapsUrl": "https://www.bing.com/maps/search?mepi=57%7E%7EEmbedded%7ELargeMapLink&ty=18&v=2&sV=1&FORM=MIRE&style=r&q=Rua+Jo%C3%A3o+de+Lacerda%2C+418%2C+Bangu%2C+Rio+de+Janeiro+-+RJ%2C+21820-220%2C+Brasil&cp=-22.884226%7E-43.472846&lvl=16",
+    "eventDate": "2026-12-06T12:00:00.000Z",
+    "address": "Rua João de Lacerda, 418, Bangu",
+    "mapsUrl": "https://www.google.com.br/maps/place/R.+Jo%C3%A3o+de+Lacerda,+418+-+Bangu,+Rio+de+Janeiro+-+RJ,+21820-220/@-22.8841151,-43.475747,17z/data=!3m1!4b1!4m6!3m5!1s0x9bdfc2c40681eb:0xe66dfea3db4a8069!8m2!3d-22.8841151!4d-43.4731721!16s%2Fg%2F11zy3fnst6?entry=ttu&g_ep=EgoyMDI2MTEwMy4wIKXMDSoASAFQAw%3D%3D",
     "musicUrl": "",
     "heroImage": "",
     "adminEmail": "admin@convite.local",
     "rsvpEnabled": true,
-    "reservationsEnabled": true
+    "honoree": {
+      "name": "Ana Júlia",
+      "clothingSize": "G",
+      "shoeSize": "39"
+    }
   },
   "gifts": [
     {
-      "id": "b2fe84ce-b9b2-4a8f-abe3-9513829209d4",
-      "name": "Blusa",
-      "description": "Uma blusa para deixar a aniversariante mais elegante. \nOBS: tamanho G",
-      "image": "/uploads/21efa3d9-602c-4cc6-9edf-36a32dd19530.jpg",
-      "buyUrl": "https://br.shein.com/Cropped-Strapless-Blouse-With-Ruffles-Elegant-Fashion-Blogger-Style-Summer-Premium-Style-No-Padding-p-481921352.html?mallCode=2&imgRatio=3-4&main_attr=27_112",
+      "id": "f308021b-9b6f-466b-9e7c-25ba88940ab7",
+      "name": "❤️PIX O PRESENTE ESPECIAL❤️",
+      "description": "Chave PIX: 21968111104",
+      "image": "",
       "active": true,
-      "chosenBy": null,
-      "chosenAt": null,
-      "createdAt": "2026-11-07T19:24:57.450Z"
+      "createdAt": "2026-11-08T18:06:34.583Z"
     },
     {
-      "id": "6b6407a7-102a-4845-9d67-a2677ae8f6b4",
-      "name": "Blusa",
-      "description": "Uma blusa para deixar a aniversariante mais elegante. \nOBS: tamanho G",
-      "image": "/uploads/5a80b0a2-08cb-41be-86ec-7caf70d20fc0.jpg",
-      "buyUrl": "https://br.shein.com/Travachic-Women-s-Next-Season-Woven-Vacation-Plant-Parrot-Print-Front-Tie-Camisole-Beach-Multicolor-Summer-Boho-p-475713353.html?mallCode=2&imgRatio=3-4",
+      "id": "2d538a5a-733d-49b5-9d5c-7a67b4367176",
+      "name": "Roupas em geral",
+      "description": "Peças de roupa para renovar o guarda-roupa e deixar a Ana Júlia ainda mais estilosa. Blusas, vestidos, conjuntos ou qualquer peça escolhida com carinho serão muito bem-vindos!",
+      "image": "",
       "active": true,
-      "chosenBy": null,
-      "chosenAt": null,
-      "createdAt": "2026-11-07T19:26:26.410Z"
+      "createdAt": "2026-11-08T18:07:20.302Z"
     },
     {
-      "id": "cfe5fd01-b66c-47e6-94cd-e4eff2d9fb56",
+      "id": "g1",
       "name": "Perfume",
-      "description": "Uma fragrância para a aniversariante exalar um cheiro doce",
-      "image": "/uploads/a159c479-274a-4295-a806-eaea3e26f9db.jpg",
-      "buyUrl": "https://www.natura.com.br/p/desodorante-colonia-luna-75-ml/NATBRA-44452?position=1&listTitle=search+results+list+algolia+showcase+-+luna",
+      "description": "Uma fragrância delicada e doce para perfumar o novo ciclo.",
+      "image": "",
       "active": true,
-      "chosenBy": null,
-      "chosenAt": null,
-      "createdAt": "2026-11-07T19:32:47.833Z"
+      "createdAt": "2026-11-08T17:58:33.679Z"
     },
     {
-      "id": "06550aa4-f4b1-42d9-9861-8c9776f61083",
-      "name": "Perfume",
-      "description": "Uma fragrância para a aniversariante exalar um cheiro doce",
-      "image": "/uploads/f96ee618-6bd0-477d-961a-9d5be21be3b3.jpg",
-      "buyUrl": "https://www.natura.com.br/p/desodorante-colonia-luna-nuit-75-ml/NATBRA-204451?position=8&listTitle=search+results+list+algolia+showcase+-+luna",
+      "id": "g3",
+      "name": "Bolsa",
+      "description": "Uma bolsa linda para acompanhar a Ana nos próximos passeios.",
+      "image": "",
       "active": true,
-      "chosenBy": null,
-      "chosenAt": null,
-      "createdAt": "2026-11-07T19:33:33.014Z"
+      "createdAt": "2026-11-08T17:58:33.680Z"
     },
     {
-      "id": "82a255ee-58dc-46d9-bb94-229cb3d5afc4",
-      "name": "Hidratante",
-      "description": "Um Hidratante para a pele se sentir renovada e suave",
-      "image": "/uploads/f1fb64bc-a582-44df-a501-0fd681b774c9.jpg",
-      "buyUrl": "https://www.natura.com.br/p/desodorante-hidratante-corporal-perfumado-luna-300-ml/NATBRA-97153?utm_term=NATBRA-97153",
+      "id": "58a2c4f3-95d1-4ae5-aad3-db5c41722a43",
+      "name": "Hidratante Corporal",
+      "description": "Pele macia, cheirosa e bem cuidada: um carinho que a Ana vai adorar!",
+      "image": "",
       "active": true,
-      "chosenBy": null,
-      "chosenAt": null,
-      "createdAt": "2026-11-07T19:34:37.826Z"
+      "createdAt": "2026-11-08T18:06:51.095Z"
     },
     {
-      "id": "f421c03f-5e22-44ec-b076-19434a4c4c28",
-      "name": "Hidratante",
-      "description": "Um Hidratante para a pele se sentir renovada e suave",
-      "image": "/uploads/4f20d115-9d46-4fa8-8c01-6c11396c7201.jpg",
-      "buyUrl": "https://www.boticario.com.br/produto/creme-acetinado-hidratante-desodorante-corporal-lily-lor-250g?utm_source=compartilhar&utm_medium=site&utm_campaign=aon",
+      "id": "63342b66-7192-43d5-acfa-16b8349a46a9",
+      "name": "Creme, Gel, Hidratação entre outros",
+      "description": "Um mimo para cuidar dos fios e deixar cada penteado ainda mais lindo.",
+      "image": "",
       "active": true,
-      "chosenBy": null,
-      "chosenAt": null,
-      "createdAt": "2026-11-07T19:37:30.771Z"
+      "createdAt": "2026-11-08T18:06:58.662Z"
     },
     {
-      "id": "029e8101-ff80-4a5a-80f0-293db355107c",
-      "name": "Gel",
-      "description": "Um Gel para modelar os cachos",
-      "image": "/uploads/b5f5ad7f-31c5-4279-9ea6-de9bbb8a9dd0.jpg",
-      "buyUrl": "https://www.mercadolivre.com.br/mel-cola-cachos-naturais-e-organicos-modelador-1kg-trihair/up/MLBU2723738147?pdp_filters=item_id%3AMLB4481885072&matt_tool=38524122&ua=suma8s_AZSkLXm6MDDuG0Flc91ek9xMQrFjzBmOQ6JmkwqE#origin=whatsapp&sid=whatsapp&wid=MLB4481885072",
+      "id": "0be1416b-f98f-4360-b35e-f63988cf4e71",
+      "name": "Bolsa",
+      "description": "Uma bolsa linda para acompanhar a Ana nos próximos passeios.",
+      "image": "",
       "active": true,
-      "chosenBy": null,
-      "chosenAt": null,
-      "createdAt": "2026-11-07T19:38:38.460Z"
+      "createdAt": "2026-11-08T18:07:05.594Z"
     },
     {
-      "id": "c043be46-6bde-4d76-8a11-2ca69038a7da",
-      "name": "Garrafa ou copo da farm",
-      "description": "",
-      "image": "/uploads/2cba4d61-e03e-465c-9912-08cf5fea7437.jpg",
-      "buyUrl": "https://www.instagram.com/casaazuloficial/",
+      "id": "g4",
+      "name": "Bijuteria ou acessório",
+      "description": "Brincos, colar, pulseira… um detalhe que faz toda a diferença.",
+      "image": "",
       "active": true,
-      "chosenBy": null,
-      "chosenAt": null,
-      "createdAt": "2026-11-07T19:40:04.987Z"
-    },
-    {
-      "id": "73b2a4bc-2b14-46a6-8c41-c6da61c3ddc4",
-      "name": "Livro",
-      "description": "",
-      "image": "/uploads/127f92ac-491d-4586-8bc9-a3bb2348ba60.jpg",
-      "buyUrl": "https://shopee.com.br/product/1331861476/58200867515?d_id=6f0a3&uls_trackid=572oqvgs00c6&utm_content=2YBxPA44rgjorDre8ftHtyBhXfSF&is_from_login=true",
-      "active": true,
-      "chosenBy": null,
-      "chosenAt": null,
-      "createdAt": "2026-11-07T19:41:28.998Z"
-    },
-    {
-      "id": "43b2ddcc-ee86-4717-977f-356e7c991f16",
-      "name": "Livro",
-      "description": "",
-      "image": "/uploads/d7ff7b34-b7c4-4a2d-a030-bd66499d706a.jpg",
-      "buyUrl": "https://shopee.com.br/product/1379198027/22493509966?d_id=6f0a3&uls_trackid=572or5uq00l0&utm_content=2YBxPA44rguoZZuhxb5qRUE2LBfM",
-      "active": true,
-      "chosenBy": null,
-      "chosenAt": null,
-      "createdAt": "2026-11-07T19:42:11.636Z"
-    },
-    {
-      "id": "10e815d5-285e-476a-812c-d45583b110a5",
-      "name": "Livro",
-      "description": "",
-      "image": "/uploads/90a9fe56-6fa7-4012-9920-9703645ac214.jpg",
-      "buyUrl": "https://shopee.com.br/product/1369746200/22893475836?d_id=6f0a3&uls_trackid=572or9no00c2&utm_content=2YBxPA44rh5xwJXh1sUCqoVT9sK5",
-      "active": true,
-      "chosenBy": null,
-      "chosenAt": null,
-      "createdAt": "2026-11-07T19:43:57.017Z"
-    },
-    {
-      "id": "fc8a5436-b204-4f32-9e42-8001cb2b18f2",
-      "name": "Power Bank",
-      "description": "",
-      "image": "/uploads/b2eff410-5058-4ec0-b7e9-9c402d5d331b.jpg",
-      "buyUrl": "https://shopee.com.br/product/1259086167/22793522469?d_id=6f0a3&uls_trackid=572orojk01c1&utm_content=2YBxPA44riSMtHyHHE11FXXhBbT5",
-      "active": true,
-      "chosenBy": null,
-      "chosenAt": null,
-      "createdAt": "2026-11-07T19:45:39.503Z"
-    },
-    {
-      "id": "249934ed-340f-48c4-82ba-bef837b161db",
-      "name": "Perfume",
-      "description": "",
-      "image": "/uploads/b959e7f0-9583-4fd6-9593-1eb2a1f82dca.jpg",
-      "buyUrl": "https://www.boticario.com.br/produto/malbec-magnetic-desodorante-colonia-100ml-v3/",
-      "active": true,
-      "chosenBy": null,
-      "chosenAt": null,
-      "createdAt": "2026-11-07T19:49:12.301Z"
-    },
-    {
-      "id": "d9193cd6-5205-4063-8434-5cd0e4026b5e",
-      "name": "Perfume",
-      "description": "",
-      "image": "/uploads/d5a65b07-ed5f-4dc1-b3bb-50c839cb07e8.jpg",
-      "buyUrl": "https://www.boticario.com.br/produto/floratta-red-passion-eau-de-parfum-75ml-v2/",
-      "active": true,
-      "chosenBy": null,
-      "chosenAt": null,
-      "createdAt": "2026-11-07T19:50:15.668Z"
+      "createdAt": "2026-11-08T17:58:33.680Z"
     }
   ],
   "rsvps": []
