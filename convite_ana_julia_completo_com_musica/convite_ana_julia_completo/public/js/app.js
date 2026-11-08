@@ -64,6 +64,25 @@ async function init(){try{
   renderRsvp();renderGifts();renderAbout();countdown();setInterval(countdown,1000);
   setInterval(()=>{if(!document.hidden)refreshGifts()},60000); /* mantém a lista atualizada para quem deixa a página aberta */
 }catch(e){console.error(e)}}
-$('#openBtn').onclick=async()=>{$('#cover').classList.add('closed');try{if($('#audio').src)await $('#audio').play();$('#music').textContent='♫'}catch(e){$('#music').textContent='♫'}};
-$('#music').onclick=async()=>{const a=$('#audio');if(!a.src)return;try{if(a.paused){await a.play();$('#music').textContent='♫'}else{a.pause();$('#music').textContent='♪'}}catch(e){}};
+/* ---------- música de fundo ----------
+   Há um único <audio id="audio"> na página (sem outros players). O botão alterna tocar/pausar; além disso,
+   a música pausa sozinha quando a página fica oculta (troca de aba, navegador minimizado, tela bloqueada)
+   e só volta, do mesmo ponto, se estava tocando antes. Quem pausou manualmente continua pausado. */
+const audioEl=$('#audio'),musicBtn=$('#music');
+let resumeAfterHidden=false; /* true = a PÁGINA pausou a música (não o usuário) e ela deve voltar */
+const syncMusicIcon=()=>{musicBtn.textContent=audioEl.paused?'♪':'♫'};
+audioEl.addEventListener('play',syncMusicIcon);audioEl.addEventListener('pause',syncMusicIcon);
+async function playMusic(){if(!audioEl.src||!audioEl.paused)return;try{await audioEl.play()}catch(e){}syncMusicIcon()} /* já tocando = nada a fazer (evita iniciar duas vezes) */
+function suspendMusic(){ /* página oculta ou sendo fechada */
+  if(!audioEl.paused){resumeAfterHidden=true;audioEl.pause()} /* pause() mantém o ponto atual; não chamamos load()/currentTime */
+}
+function resumeMusic(){
+  if(!resumeAfterHidden)return; /* foi pausada pelo usuário, ou nunca tocou: não volta sozinha */
+  resumeAfterHidden=false;playMusic();
+}
+document.addEventListener('visibilitychange',()=>{document.visibilityState==='hidden'?suspendMusic():resumeMusic()});
+window.addEventListener('pagehide',suspendMusic); /* fechar/sair da página (e envio para o cache de navegação) */
+window.addEventListener('pageshow',e=>{if(e.persisted&&document.visibilityState==='visible')resumeMusic()}); /* voltou do cache de navegação */
+$('#openBtn').onclick=async()=>{$('#cover').classList.add('closed');resumeAfterHidden=false;await playMusic()};
+musicBtn.onclick=async()=>{if(!audioEl.src)return;resumeAfterHidden=false;if(audioEl.paused)await playMusic();else audioEl.pause()};
 init();
