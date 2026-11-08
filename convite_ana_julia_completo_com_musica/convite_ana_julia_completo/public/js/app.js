@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s);
-let settings={}, gifts=[], me=null, pending=null;
+let settings={}, gifts=[], honoree=null, me=null;
 const TOKEN_KEY='convite_guest_token'; /* guarda só a identidade do convidado; a disponibilidade dos presentes vem sempre do servidor */
 const getToken=()=>{try{return localStorage.getItem(TOKEN_KEY)||''}catch{return ''}};
 const setToken=t=>{try{t?localStorage.setItem(TOKEN_KEY,t):localStorage.removeItem(TOKEN_KEY)}catch{}};
@@ -21,7 +21,7 @@ function renderRsvp(){
   if(me.attendance==='yes'){
     done.append(el('div','flower','✿'),el('h3',null,'Presença confirmada, '+firstName(me.name)+'!'),
       el('p',null,me.people===1?'Anotamos que você irá sozinho(a). Mal podemos esperar!':'Anotamos '+me.people+' pessoas no total (você e mais '+(me.people-1)+'). Mal podemos esperar!'));
-    const a=el('a','btn','Escolher meu presente ✧');a.href='#gifts';done.append(a);
+    const a=el('a','btn light','Ver lista de presentes ✧');a.href='#gifts';done.append(a);
   }else{
     done.append(el('div','flower','✿'),el('h3',null,'Obrigada por avisar, '+firstName(me.name)+'!'),el('p',null,'Sentiremos sua falta, mas agradecemos o carinho ♥'));
   }
@@ -31,59 +31,38 @@ $('#rsvpForm').onsubmit=async e=>{e.preventDefault();const msg=$('#rsvpMsg'),att
   if(att==='yes'&&!$('#people').value){msg.textContent='Selecione quantas pessoas irão ao evento (incluindo você).';$('#people').focus();return}
   msg.textContent='Enviando…';
   try{const d=await api('rsvp',{method:'POST',body:JSON.stringify({name:$('#name').value.trim(),attendance:att,people:att==='yes'?Number($('#people').value):0,message:$('#message').value.trim()})});
-    setToken(d.token);me=d.guest;msg.textContent='';$('#rsvpForm').reset();syncPeopleField();renderRsvp();await refreshGifts();
+    setToken(d.token);me=d.guest;msg.textContent='';$('#rsvpForm').reset();syncPeopleField();renderRsvp();
     $('#rsvp').scrollIntoView({block:'start'})}
   catch(err){msg.textContent=err.message}};
 document.querySelectorAll('input[name=attendance]').forEach(r=>r.onchange=syncPeopleField);
 
-/* ---------- lista de presentes ---------- */
-const canChoose=()=>settings.reservationsEnabled&&me&&me.attendance==='yes'&&!me.gift;
-function renderStatus(){
-  const s=$('#giftStatus');s.innerHTML='';s.className='gift-status';
-  let text,link;
-  if(!settings.reservationsEnabled)text='A escolha de presentes está encerrada. Você ainda pode ver a lista.';
-  else if(!me){text='Para escolher um presente, primeiro ';link=['confirme sua presença','#rsvp']}
-  else if(me.attendance!=='yes')text='Como você não poderá comparecer, não precisa escolher presente — mas fique à vontade para conhecer a lista ♥';
-  else if(me.gift){s.classList.add('ok');text='Você escolheu: '+me.gift.name+' ♥ Obrigada pelo carinho!'}
-  else text='Olá, '+firstName(me.name)+'! Toque em “Quero este presente” no item que você preferir.';
-  s.append(text);if(link){const a=el('a',null,link[0]);a.href=link[1];s.append(a,'.')}
-}
+/* ---------- lista de presentes (somente informativa) ---------- */
 function renderGifts(){
-  renderStatus();
-  const grid=$('#giftGrid');grid.innerHTML='';$('#giftEmpty').hidden=gifts.length>0;
+  const ul=$('#giftList');ul.innerHTML='';$('#giftEmpty').hidden=gifts.length>0;
   gifts.forEach(g=>{
-    const card=el('article','gift-card '+(g.mine?'mine':g.available?'available':'taken'));
-    const media=el('div','gift-media');
-    if(g.image){const img=new Image();img.src=g.image;img.alt=g.name;img.loading='lazy';img.onerror=()=>{img.remove();media.append(el('span','gift-ph','🎁'))};media.append(img)}else media.append(el('span','gift-ph','🎁'));
-    media.append(el('span','badge',g.mine?'Escolhido por você ♥':g.available?'Disponível':'Já escolhido'));
-    const body=el('div','gift-body');body.append(el('h3',null,g.name));if(g.description)body.append(el('p',null,g.description));
-    const btn=el('button','btn'+(g.available&&canChoose()?'':' light'));btn.type='button';
-    if(g.available&&canChoose()){btn.textContent='Quero este presente';btn.onclick=()=>askChoose(g)}
-    else{btn.disabled=true;btn.textContent=g.mine?'Seu presente ♥':g.available?(me?(me.gift?'Você já escolheu':me.attendance!=='yes'?'Indisponível':'Escolha encerrada'):'Confirme sua presença'):'Indisponível'}
-    if(g.buyUrl){const buy=el('a','btn light buy','Onde comprar? ↗');buy.href=g.buyUrl;buy.target='_blank';buy.rel='noopener noreferrer';body.append(buy)}
-    body.append(btn);card.append(media,body);grid.append(card)});
+    const li=el('li','gift-item'),body=el('div','gift-text');body.append(el('h3',null,g.name));if(g.description)body.append(el('p',null,g.description));
+    li.append(body);ul.append(li)});
 }
-async function refreshGifts(){try{const d=await api('public');settings=d.settings;gifts=d.gifts;if(getToken()&&!d.me)setToken('');me=d.me;renderRsvp();renderGifts()}catch(e){console.error(e)}}
-
-/* ---------- confirmação da escolha ---------- */
-const dlg=$('#confirmDialog');
-function askChoose(g){pending=g;$('#dialogGift').textContent=g.name;$('#dialogErr').textContent='';$('#dialogOk').disabled=false;dlg.showModal()}
-$('#dialogCancel').onclick=()=>{pending=null;dlg.close()};
-$('#confirmForm').onsubmit=async e=>{e.preventDefault();if(!pending)return;const ok=$('#dialogOk');ok.disabled=true;$('#dialogErr').textContent='Enviando…';
-  try{const d=await api('gift/choose',{method:'POST',body:JSON.stringify({giftId:pending.id})});dlg.close();pending=null;me=d.guest;await refreshGifts();$('#giftMsg').textContent=d.message;$('#gifts').scrollIntoView({block:'start'})}
-  catch(err){$('#dialogErr').textContent=err.message;ok.disabled=false;await refreshGifts();if(!canChoose()||!gifts.find(g=>g.id===pending?.id&&g.available)){setTimeout(()=>{if(dlg.open)dlg.close();$('#giftMsg').textContent=err.message},1500)}}};
-dlg.addEventListener('click',e=>{if(e.target===dlg){pending=null;dlg.close()}});
+/* ---------- informações da aniversariante ---------- */
+function renderAbout(){
+  const h=honoree||{},rows=[['🌸','Nome',h.name],['👗','Tamanho de roupa',h.clothingSize],['👟','Calçado',h.shoeSize]].filter(r=>r[2]); /* campos vazios não aparecem */
+  $('#about').hidden=!rows.length;if(!rows.length)return;
+  $('#aboutTitle').textContent='Um pouquinho sobre '+(h.name||'a aniversariante')+' ❤️';
+  const dl=$('#aboutList');dl.innerHTML='';
+  rows.forEach(([ic,k,v])=>{const d=el('div','about-row');d.append(el('span','about-ic',ic),el('dt',null,k),el('dd',null,v));dl.append(d)});
+}
+async function refreshGifts(){try{const d=await api('public');settings=d.settings;gifts=d.gifts;honoree=d.honoree;if(getToken()&&!d.me)setToken('');me=d.me;renderRsvp();renderGifts();renderAbout()}catch(e){console.error(e)}}
 
 async function init(){try{
   const q=new URLSearchParams(location.search).get('g'); /* link pessoal gerado pelo painel, para recuperar o acesso */
   if(q){setToken(q);history.replaceState(null,'',location.pathname+location.hash)}
   buildPeopleSelect();
-  const d=await api('public');settings=d.settings;gifts=d.gifts;if(getToken()&&!d.me)setToken('');me=d.me;
+  const d=await api('public');settings=d.settings;gifts=d.gifts;honoree=d.honoree;if(getToken()&&!d.me)setToken('');me=d.me;
   const parts=dateParts(settings.eventDate);$('#dateText').textContent=parts.date;$('#timeText').textContent=parts.time;$('#addressText').textContent=settings.address||'Endereço a confirmar';$('#mapBtn').href=settings.mapsUrl||'#';$('#mapBtn').style.display=settings.mapsUrl?'inline-flex':'none';
   const audio=$('#audio');audio.src='/audio/musica.mp3';audio.preload='auto';audio.load();$('#music').style.display='block';
   if(settings.heroImage){document.querySelector('.hero').style.backgroundImage=`linear-gradient(#fff9f2ed,#fff9f2ed),url("${settings.heroImage}")`;document.querySelector('.hero').style.backgroundSize='cover'}
-  renderRsvp();renderGifts();countdown();setInterval(countdown,1000);
-  setInterval(()=>{if(!document.hidden&&!dlg.open)refreshGifts()},15000); /* mantém a disponibilidade atualizada para quem está com a página aberta */
+  renderRsvp();renderGifts();renderAbout();countdown();setInterval(countdown,1000);
+  setInterval(()=>{if(!document.hidden)refreshGifts()},60000); /* mantém a lista atualizada para quem deixa a página aberta */
 }catch(e){console.error(e)}}
 $('#openBtn').onclick=async()=>{$('#cover').classList.add('closed');try{if($('#audio').src)await $('#audio').play();$('#music').textContent='♫'}catch(e){$('#music').textContent='♫'}};
 $('#music').onclick=async()=>{const a=$('#audio');if(!a.src)return;try{if(a.paused){await a.play();$('#music').textContent='♫'}else{a.pause();$('#music').textContent='♪'}}catch(e){}};
